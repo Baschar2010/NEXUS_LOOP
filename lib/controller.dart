@@ -81,7 +81,10 @@ class NexusController extends ChangeNotifier {
     if (files.isEmpty) return;
     final pl = active;
     if (pl.id == null) return;
+    const videoExt = ['mp4', 'webm', 'mov', 'mkv', 'avi', '3gp', 'm4v', 'm4a'];
     for (final f in files) {
+      final ext = f.path.split('.').last.toLowerCase();
+      if (!videoExt.contains(ext)) continue;
       final file = File(f.path);
       int size = 0;
       try { size = await file.length(); } catch (_) {}

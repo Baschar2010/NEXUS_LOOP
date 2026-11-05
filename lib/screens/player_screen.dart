@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
+import '../background_service.dart';
 import '../controller.dart';
 import '../theme.dart';
 
@@ -13,7 +15,7 @@ class PlayerScreen extends StatefulWidget {
   State<PlayerScreen> createState() => _PlayerScreenState();
 }
 
-class _PlayerScreenState extends State<PlayerScreen> {
+class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver {
   late int _index;
   VideoPlayerController? _vc;
   bool _showControls = true;
@@ -21,9 +23,19 @@ class _PlayerScreenState extends State<PlayerScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final c = context.read<NexusController>();
     _index = widget.startIndex.clamp(0, c.active.videos.length - 1);
+    WakelockPlus.enable();
+    BackgroundPlayback.start();
     _loadCurrent();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _vc?.play();
+    }
   }
 
   Future<void> _loadCurrent() async {
@@ -70,8 +82,11 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _vc?.removeListener(_onTick);
     _vc?.dispose();
+    WakelockPlus.disable();
+    BackgroundPlayback.stop();
     super.dispose();
   }
 

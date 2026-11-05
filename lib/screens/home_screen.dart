@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../controller.dart';
 import '../models.dart';
 import '../theme.dart';
+import '../update_service.dart';
+import '../update_dialog.dart';
 import 'player_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -14,6 +16,19 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool gridView = true;
   final TextEditingController _search = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkUpdate());
+  }
+
+  Future<void> _checkUpdate() async {
+    final service = UpdateService();
+    final release = await service.check();
+    if (!mounted || release == null) return;
+    await showUpdateDialog(context, release);
+  }
 
   @override
   void dispose() {
@@ -173,7 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           // Bottom action bar
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: const BoxDecoration(
               color: NexusColors.surface,
               border: Border(top: BorderSide(color: NexusColors.border)),
@@ -185,32 +200,23 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: NexusColors.green,
                       foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                     ),
-                    icon: const Icon(Icons.video_library),
-                    label: const Text('VIDEOS', style: TextStyle(fontWeight: FontWeight.w700)),
+                    icon: const Icon(Icons.video_library, size: 22),
+                    label: const Text('VIDEOS', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                     onPressed: () => c.pickVideos(),
                   ),
                 ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.volume_up),
-                  onPressed: () => _showVolume(context, c),
-                ),
-                IconButton(
-                  icon: Icon(c.loopEnabled ? Icons.repeat_one : Icons.repeat),
-                  onPressed: () => c.toggleLoop(),
+                const SizedBox(width: 6),
+                _BigIconBtn(icon: Icons.volume_up, onTap: () => _showVolume(context, c)),
+                _BigIconBtn(
+                  icon: c.loopEnabled ? Icons.repeat_one : Icons.repeat,
                   color: c.loopEnabled ? NexusColors.green : NexusColors.muted,
+                  onTap: () => c.toggleLoop(),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.download),
-                  onPressed: () => c.exportActive(),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_sweep, color: Colors.redAccent),
-                  onPressed: () => _confirmDeleteAll(context, c),
-                ),
+                _BigIconBtn(icon: Icons.download, onTap: () => c.exportActive()),
+                _BigIconBtn(icon: Icons.delete_sweep, color: Colors.redAccent, onTap: () => _confirmDeleteAll(context, c)),
               ],
             ),
           ),
@@ -396,6 +402,33 @@ class _VideoListTile extends StatelessWidget {
         ),
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PlayerScreen(startIndex: index))),
         onLongPress: () => _showMoveSheet(context, c, video),
+      ),
+    );
+  }
+}
+
+class _BigIconBtn extends StatelessWidget {
+  final IconData icon;
+  final Color? color;
+  final VoidCallback onTap;
+  const _BigIconBtn({required this.icon, this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Material(
+        color: NexusColors.surface2,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: SizedBox(
+            width: 48,
+            height: 48,
+            child: Icon(icon, color: color ?? NexusColors.text, size: 24),
+          ),
+        ),
       ),
     );
   }
