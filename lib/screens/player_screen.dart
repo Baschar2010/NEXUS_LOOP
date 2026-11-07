@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 import '../background_service.dart';
 import '../controller.dart';
+import '../main.dart';
 import '../theme.dart';
 
 class PlayerScreen extends StatefulWidget {
@@ -32,6 +33,10 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      final pos = audioHandler?.player.position;
+      if (pos != null && _vc != null && _vc!.value.isInitialized) {
+        _vc!.seekTo(pos);
+      }
       _vc?.play();
     }
   }
@@ -44,12 +49,18 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     final v = vids[_index];
     _vc = VideoPlayerController.file(File(v.path));
     await _vc!.initialize();
-    _vc!.setVolume(c.volume);
+    _vc!.setVolume(0); // audio handled by audio_service
     if (c.loopEnabled) {
       _vc!.setLooping(false);
     }
     _vc!.addListener(_onTick);
     _vc!.play();
+    try {
+      await audioHandler?.pause();
+      await audioHandler?.loadFile(v.path, title: v.name);
+      await audioHandler?.play();
+      audioHandler?.player.setVolume(c.volume);
+    } catch (_) {}
     setState(() {});
   }
 
@@ -84,6 +95,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     _vc?.removeListener(_onTick);
     _vc?.dispose();
     BackgroundPlayback.stop();
+    audioHandler?.stop();
     super.dispose();
   }
 
@@ -154,7 +166,13 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
                           icon: Icon(_vc != null && _vc!.value.isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white, size: 36),
                           onPressed: () {
                             if (_vc == null) return;
-                            _vc!.value.isPlaying ? _vc!.pause() : _vc!.play();
+                            if (_vc!.value.isPlaying) {
+                              _vc!.pause();
+                              audioHandler?.pause();
+                            } else {
+                              _vc!.play();
+                              audioHandler?.play();
+                            }
                             setState(() {});
                           },
                         ),
