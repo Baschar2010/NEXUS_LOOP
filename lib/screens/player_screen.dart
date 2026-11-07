@@ -2,8 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
-import '../background_service.dart';
 import '../controller.dart';
 import '../theme.dart';
 
@@ -26,8 +24,6 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     WidgetsBinding.instance.addObserver(this);
     final c = context.read<NexusController>();
     _index = widget.startIndex.clamp(0, c.active.videos.length - 1);
-    WakelockPlus.enable();
-    BackgroundPlayback.start();
     _loadCurrent();
   }
 
@@ -85,8 +81,6 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     WidgetsBinding.instance.removeObserver(this);
     _vc?.removeListener(_onTick);
     _vc?.dispose();
-    WakelockPlus.disable();
-    BackgroundPlayback.stop();
     super.dispose();
   }
 
