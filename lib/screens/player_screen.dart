@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
-import '../background_service.dart';
 import '../controller.dart';
 import '../main.dart';
 import '../theme.dart';
@@ -26,18 +25,22 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     WidgetsBinding.instance.addObserver(this);
     final c = context.read<NexusController>();
     _index = widget.startIndex.clamp(0, c.active.videos.length - 1);
-    BackgroundPlayback.start();
     _loadCurrent();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      final pos = audioHandler?.player.position;
+      final pos = audioHandler?.position;
       if (pos != null && _vc != null && _vc!.value.isInitialized) {
         _vc!.seekTo(pos);
       }
-      _vc?.play();
+      if (audioHandler?.player.playing ?? false) {
+        _vc?.play();
+      }
+    } else {
+      // App left the foreground: audio keeps playing via audio_service.
+      _vc?.pause();
     }
   }
 
@@ -59,7 +62,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
       await audioHandler?.pause();
       await audioHandler?.loadFile(v.path, title: v.name);
       await audioHandler?.play();
-      audioHandler?.player.setVolume(c.volume);
+      audioHandler?.setVolume(c.volume);
     } catch (_) {}
     setState(() {});
   }
@@ -94,7 +97,6 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     WidgetsBinding.instance.removeObserver(this);
     _vc?.removeListener(_onTick);
     _vc?.dispose();
-    BackgroundPlayback.stop();
     audioHandler?.stop();
     super.dispose();
   }

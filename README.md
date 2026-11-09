@@ -1,17 +1,40 @@
-# nexus_loop_app
+# NEXUS LOOP
 
-A new Flutter project.
+Native Android-App (Flutter) im Spotify-Stil – ein Endlosschleifen-Video-Player mit echter Hintergrundwiedergabe.
 
-## Getting Started
+**Kein Base44. Keine Webseite. Eine echte APK.**
 
-This project is a starting point for a Flutter application.
+## Download
 
-A few resources to get you started if this is your first Flutter project:
+Aktuelle Version: **[v2.0.0](https://github.com/Baschar2010/NEXUS_LOOP/releases/latest)**
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+APK herunterladen, installieren, fertig.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Features
+
+- Spotify-artiges Dark-Design (Schwarz/Grün)
+- Playlists mit Tabs und „+ NEU“
+- Videos aus der Galerie hinzufügen (nur Videos, keine Fotos)
+- Grid- und Listen-Ansicht mit Suche
+- Fullscreen-Player mit Wisch-Gesten
+- Lautstärke-Regler
+- Endlosschleife
+- Löschen (einzeln oder alle)
+- Verschieben zwischen Playlists
+- Export
+- Große, gut treffbare Buttons unten
+- **In-App-Update:** Meldet neue Versionen automatisch, lädt und installiert sie mit einem Tipp auf „Aktualisieren“
+
+## Neu in v2.0.0
+
+- **Echte Hintergrundwiedergabe wie Spotify:** Audio läuft weiter, wenn die App verlassen wird oder der Bildschirm ausgeht
+- Media-Benachrichtigung mit Play/Pause (Sperrbildschirm & Benachrichtigungsleiste)
+- Video und Audio bleiben synchron – beim Zurückkehren in die App springt das Video an die aktuelle Position
+
+## Technik
+
+- Flutter (Dart)
+- `video_player` für die Anzeige
+- `just_audio` + `audio_service` für die Hintergrundwiedergabe
+- `sqflite` für die lokale Datenbank
+- `image_picker` für den Video-Import
