@@ -1,6 +1,9 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
 
+/// Owns the audio that keeps playing while the app is minimized or the screen
+/// is off. audio_service keeps a foreground service + partial wake lock alive
+/// for as long as [play] has been requested.
 class NexusAudioHandler extends BaseAudioHandler with SeekHandler {
   final _player = AudioPlayer();
 
@@ -46,7 +49,11 @@ class NexusAudioHandler extends BaseAudioHandler with SeekHandler {
   }
 
   @override
-  Future<void> play() => _player.play();
+  Future<void> play() async {
+    // just_audio's play() future only completes when playback stops again.
+    // Never await it, otherwise callers would hang until pause.
+    _player.play().catchError((Object _) {});
+  }
 
   @override
   Future<void> pause() => _player.pause();
@@ -57,6 +64,7 @@ class NexusAudioHandler extends BaseAudioHandler with SeekHandler {
   @override
   Future<void> stop() async {
     await _player.stop();
+    mediaItem.add(null);
     await super.stop();
   }
 
@@ -79,5 +87,13 @@ class NexusAudioHandler extends BaseAudioHandler with SeekHandler {
 
   Duration get position => _player.position;
 
+  bool get isPlaying => _player.playing;
+
+  String? get currentPath => mediaItem.value?.id;
+
   AudioPlayer get player => _player;
+
+  /// Keep playing when the user swipes the app away from the recent apps list.
+  @override
+  Future<void> onTaskRemoved() async {}
 }

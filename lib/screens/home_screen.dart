@@ -1,6 +1,8 @@
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controller.dart';
+import '../main.dart';
 import '../models.dart';
 import '../theme.dart';
 import '../update_service.dart';
@@ -186,6 +188,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         itemBuilder: (_, i) => _VideoListTile(video: videos[i], index: i),
                       ),
           ),
+          // Mini player: keeps background playback controllable after the
+          // player screen has been closed.
+          const _MiniPlayer(),
           // Bottom action bar
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -266,7 +271,10 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 12),
             Slider(
               value: c.volume,
-              onChanged: (v) => c.setVolume(v),
+              onChanged: (v) {
+                c.setVolume(v);
+                audioHandler?.setVolume(v);
+              },
             ),
             Text('${(c.volume * 100).round()} %', style: const TextStyle(color: NexusColors.muted)),
           ],
@@ -456,4 +464,77 @@ void _showMoveSheet(BuildContext context, NexusController c, VideoItem v) {
       ],
     ),
   );
+}
+
+/// Compact control strip for playback that continues in the background.
+class _MiniPlayer extends StatelessWidget {
+  const _MiniPlayer();
+
+  @override
+  Widget build(BuildContext context) {
+    final handler = audioHandler;
+    if (handler == null) return const SizedBox.shrink();
+    return StreamBuilder<MediaItem?>(
+      stream: handler.mediaItem,
+      builder: (context, itemSnapshot) {
+        final item = itemSnapshot.data;
+        if (item == null) return const SizedBox.shrink();
+        return StreamBuilder<PlaybackState>(
+          stream: handler.playbackState,
+          builder: (context, stateSnapshot) {
+            final playing = stateSnapshot.data?.playing ?? false;
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: const BoxDecoration(
+                color: NexusColors.surface,
+                border: Border(top: BorderSide(color: NexusColors.border)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: NexusColors.green,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Icon(Icons.graphic_eq, color: Colors.black, size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          item.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                        ),
+                        const Text(
+                          'Läuft im Hintergrund',
+                          style: TextStyle(color: NexusColors.muted, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: playing ? 'Pause' : 'Weiter',
+                    icon: Icon(playing ? Icons.pause : Icons.play_arrow),
+                    onPressed: () => playing ? handler.pause() : handler.play(),
+                  ),
+                  IconButton(
+                    tooltip: 'Stopp',
+                    icon: const Icon(Icons.close),
+                    onPressed: () => handler.stop(),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 }
